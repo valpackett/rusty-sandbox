@@ -1,0 +1,13 @@
+[package]
+name = "rusty-sandbox"
+version = "0.0.0"
+authors = [ "Greg V <greg@unrelenting.technology>" ]
+keywords = [ "Security", "Sandbox", "Capsicum", "Pledge" ]
+description = "rusty-sandbox"
+license = "Unlicense"
+readme = "README.md"
+homepage = "https://github.com/myfreeweb/rusty-sandbox"
+repository = "https://github.com/myfreeweb/rusty-sandbox"
+
+[dependencies]
+libc = "0.2"
