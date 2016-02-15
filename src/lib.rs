@@ -1,6 +1,7 @@
 extern crate libc;
 
 mod ffi;
+mod platform;
 pub mod fs;
 
 use std::{io, process};
@@ -55,7 +56,7 @@ impl Sandbox {
     }
 
     pub fn sandbox_this_process(&self) -> SandboxContext {
-        enter_sandbox();
+        platform::enter_sandbox();
         self.context()
     }
 
@@ -76,7 +77,7 @@ impl Sandbox {
                 pipe: unsafe { File::from_raw_fd(fds[0]) },
             })
         } else { // child
-            enter_sandbox();
+            platform::enter_sandbox();
             unsafe { libc::close(fds[0]) };
             let mut pipe = unsafe { File::from_raw_fd(fds[1]) };
             let mut ctx = self.context();
@@ -90,10 +91,6 @@ impl Sandbox {
             dirs: self.dirs.to_owned(),
         }
     }
-}
-
-fn enter_sandbox() {
-    unsafe { ffi::cap_enter() };
 }
 
 #[cfg(test)]
