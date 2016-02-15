@@ -1,16 +1,16 @@
 # rusty-sandbox [![unlicense](https://img.shields.io/badge/un-license-green.svg?style=flat)](http://unlicense.org)
 
-
-rusty-sandbox is, obviously, a sandboxing library for Rust (that's not [gaol]).
+rusty-sandbox is, obviously, a sandboxing library for Rust that's not [gaol].
 
 It's based on a simple model where you can do the following in the sandbox:
 
-- any normal non-IO stuff
+- any normal computation (not I/O)
 - I/O operations on *existing* file descriptors (i.e. files and sockets opened before entering the sandbox)
-- accepting connections on an *existing* socket, creating new file descriptors
-- opening files under pre-selected directories *though the Sandbox/SandboxContext API*, creating new file descriptors
+- accepting connections on an *existing* socket (which creates new file descriptors)
+- opening files under pre-selected directories *though the Sandbox/SandboxContext API* (which creates new file descriptors)
 
 All other ways of creating new file descriptors will fail in the sandbox!
+As well as other potentially dangerous interactions with the outside world such as sysctls, process signals (kill), etc. (platform dependent).
 
 ## Underlying technology
 
@@ -72,6 +72,27 @@ fn main() {
     println!("From the sandboxed process: {}", String::from_utf8_lossy(&buf));
 }
 ```
+
+Of course, you can use the directories feature when sandboxing the current process too:
+
+```rust
+extern crate rusty_sandbox;
+use std::io::Read;
+use rusty_sandbox::Sandbox;
+
+fn main() {
+    let ctx = Sandbox::new()
+        .add_directory("repo", ".")
+        .sandbox_this_process();
+    let mut file = ctx.directory("repo").unwrap()
+        .open_options().open("README.md").unwrap();
+    let mut buf = Vec::new();
+    file.read_to_end(&mut buf).unwrap();
+    println!("Read file: {}", String::from_utf8_lossy(&buf));
+}
+```
+
+Fun fact: [an early prototype of this library](https://gist.github.com/myfreeweb/9c13c245e9f4051236dd) used a shared memory arena for communicating between processes, like [the sandbox for the config parser in sandblast](https://github.com/myfreeweb/sandblast/blob/7dba442af2778ed7ee6a7b303ee709f015ea45fc/config.c#L181). Turns out it's not practical in any language that's higher level than C, because you can't just tell the language's standard library to allocate on an arena.
 
 [gaol]: https://github.com/servo/gaol
 [Capsicum]: https://www.cl.cam.ac.uk/research/security/capsicum/
