@@ -56,7 +56,7 @@ impl Sandbox {
     }
 
     pub fn sandbox_this_process(&self) -> SandboxContext {
-        platform::enter_sandbox();
+        platform::enter_sandbox(Box::new(self.dirs.values()));
         self.context()
     }
 
@@ -77,7 +77,7 @@ impl Sandbox {
                 pipe: unsafe { File::from_raw_fd(fds[0]) },
             })
         } else { // child
-            platform::enter_sandbox();
+            platform::enter_sandbox(Box::new(self.dirs.values()));
             unsafe { libc::close(fds[0]) };
             let mut pipe = unsafe { File::from_raw_fd(fds[1]) };
             let mut ctx = self.context();
@@ -114,7 +114,6 @@ mod tests {
         Sandbox::new()
             .add_directory("temp", "/tmp")
             .sandboxed_fork(|ctx, _| {
-                File::open("/tmp/x").unwrap();
                 let mut file = ctx.directory("temp").unwrap()
                     .open_options().write(true).create(true)
                     .open("hello_rusty_sandbox").unwrap();

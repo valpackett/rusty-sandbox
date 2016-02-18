@@ -18,7 +18,7 @@ rusty-sandbox strongly prefers simple sandboxing facilities that don't require a
 
 - FreeBSD: [Capsicum], the first supported sandbox.
 - OpenBSD: **TODO** [pledge]
-- Apple OS X: **TODO** [Seatbelt]
+- Apple OS X: [Seatbelt]/sandboxd.
 - Linux: **TODO** oh fuck. This is going to involve seccomp-bpf. Unfortunately, the openat O_BENEATH behavior proposed on [capsicum-linux](http://capsicum-linux.org) hasn't been accepted into the Linux kernel!
 
 ## Usage

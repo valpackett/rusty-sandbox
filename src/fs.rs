@@ -1,7 +1,7 @@
 use libc;
 use libc::c_int;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::ffi::CString;
 use std::os::unix::raw;
@@ -71,6 +71,7 @@ impl OpenOptions {
 #[derive(Clone)]
 pub struct Directory {
     fd: RawFd,
+    pub path: PathBuf,
 }
 
 impl Directory {
@@ -78,7 +79,8 @@ impl Directory {
         let path = path.as_ref();
         if path.is_dir() {
             Some(Directory {
-                fd: unsafe { libc::open(path_to_c(path).as_ptr(), libc::O_CLOEXEC) }
+                fd: unsafe { libc::open(path_to_c(path).as_ptr(), libc::O_CLOEXEC) },
+                path: path.canonicalize().unwrap(),
             })
         } else {
             None

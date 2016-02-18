@@ -6,4 +6,7 @@ extern {
 
     #[cfg(target_os = "freebsd")]
     pub fn cap_enter() -> c_int;
+
+    #[cfg(target_os = "macos")]
+    pub fn sandbox_init(profile: *const c_char, flags: u64, errorbuf: *mut *mut c_char) -> c_int;
 }
