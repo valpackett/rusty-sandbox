@@ -105,7 +105,7 @@ Please feel free to submit pull requests!
 
 By participating in this project you agree to follow the [Contributor Code of Conduct](http://contributor-covenant.org/version/1/4/).
 
-[The list of contributors is available on GitHub](https://github.com/myfreeweb/secstr/graphs/contributors).
+[The list of contributors is available on GitHub](https://github.com/myfreeweb/rusty-sandbox/graphs/contributors).
 
 ## License
 
