@@ -1,12 +1,11 @@
 use libc;
-use libc::c_int;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::ffi::CString;
+use std::os::raw::{c_char, c_int};
 use std::os::unix::raw;
 use std::os::unix::io::{RawFd, FromRawFd};
-use ffi;
 
 fn path_to_c<P: AsRef<Path>>(path: P) -> CString {
     CString::new(path.as_ref().as_os_str().to_str().unwrap()).unwrap()
@@ -27,7 +26,7 @@ impl OpenOptions {
             (false, true) => libc::O_WRONLY,
             (true, false) | (false, false) => libc::O_RDONLY,
         };
-        let fd = unsafe { ffi::openat(self.dir_fd, path_to_c(path).as_ptr(), flags, self.mode as c_int) };
+        let fd = unsafe { openat(self.dir_fd, path_to_c(path).as_ptr(), flags, self.mode as c_int) };
         if fd > 0 {
             Ok(unsafe { File::from_raw_fd(fd) })
         } else {
@@ -96,4 +95,9 @@ impl Directory {
             mode: 0o666,
         }
     }
+}
+
+#[link(name = "c")]
+extern {
+    fn openat(dirfd: c_int, path: *const c_char, oflag: c_int, ...) -> c_int;
 }

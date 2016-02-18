@@ -1,14 +1,9 @@
-use ffi;
-use super::fs;
-#[cfg(target_os = "macos")] use std::io::Write;
-#[cfg(target_os = "macos")] use std::ffi::CString;
-#[cfg(target_os = "macos")] use std::ptr;
-// #[cfg(target_os = "macos")] use std::str;
-
-#[cfg(target_os = "freebsd")]
-pub fn enter_sandbox<'a>(_: Box<Iterator<Item=&'a fs::Directory> + 'a>) -> bool {
-    unsafe { ffi::cap_enter() == 0 }
-}
+use fs;
+use std::os::raw::{c_char, c_int};
+use std::io::Write;
+use std::ffi::CString;
+use std::ptr;
+// use std::str;
 
 #[cfg(target_os = "macos")]
 pub fn enter_sandbox<'a>(allowed_dirs: Box<Iterator<Item=&'a fs::Directory> + 'a>) -> bool {
@@ -23,10 +18,10 @@ pub fn enter_sandbox<'a>(allowed_dirs: Box<Iterator<Item=&'a fs::Directory> + 'a
     // println!("{}", str::from_utf8(&*profile).unwrap());
     let profile = CString::new(profile).unwrap();
     let mut err = ptr::null_mut();
-    unsafe { ffi::sandbox_init(profile.as_ptr(), 0, &mut err) == 0 }
+    unsafe { sandbox_init(profile.as_ptr(), 0, &mut err) == 0 }
 }
 
-#[cfg(not(any(target_os = "freebsd", target_os = "macos")))]
-pub fn enter_sandbox<'a>(_: Box<Iterator<Item=&'a fs::Directory> + 'a>) -> bool {
-    false
+#[link(name = "c")]
+extern {
+    fn sandbox_init(profile: *const c_char, flags: u64, errorbuf: *mut *mut c_char) -> c_int;
 }

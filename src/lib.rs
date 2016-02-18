@@ -1,6 +1,5 @@
 extern crate libc;
 
-mod ffi;
 mod platform;
 pub mod fs;
 
