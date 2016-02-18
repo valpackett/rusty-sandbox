@@ -98,3 +98,16 @@ Fun fact: [an early prototype of this library](https://gist.github.com/myfreeweb
 [Capsicum]: https://www.cl.cam.ac.uk/research/security/capsicum/
 [pledge]: http://www.openbsd.org/papers/hackfest2015-pledge/mgp00001.html
 [Seatbelt]: https://www.chromium.org/developers/design-documents/sandbox/osx-sandboxing-design
+
+## Contributing
+
+Please feel free to submit pull requests!
+
+By participating in this project you agree to follow the [Contributor Code of Conduct](http://contributor-covenant.org/version/1/4/).
+
+[The list of contributors is available on GitHub](https://github.com/myfreeweb/secstr/graphs/contributors).
+
+## License
+
+This is free and unencumbered software released into the public domain.  
+For more information, please refer to the `UNLICENSE` file or [unlicense.org](http://unlicense.org).
