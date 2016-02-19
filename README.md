@@ -43,35 +43,43 @@ fn main() {
 }
 ```
 
-And here's a forked process reading files from allowed directories and communicating with the parent process:
+And here's an example for the forked process & allowed directory support.
+This silly sandboxed process reads files' first lines:
 
 ```rust
 extern crate rusty_sandbox;
-use std::io::{self, Read, Write};
+use std::io::{Write, BufRead, BufReader};
 use rusty_sandbox::Sandbox;
 
 fn main() {
-    let mut pipe = Sandbox::new()
+    let mut process = Sandbox::new()
         .add_directory("repo", ".")
-        .sandboxed_fork(|ctx, pipe| {
+        .sandboxed_fork(|ctx, socket| {
             // This closure runs in a forked sandboxed process!
-            // Let's open a file under the "repo" directory
-            // and write it to the pipe that communicates
-            // with the parent process...
-            let mut file = ctx.directory("repo").unwrap()
-                .open_options().open("README.md").unwrap();
+            let reader = BufReader::new(socket.try_clone().unwrap());
+            for line in reader.lines() {
+                let line = line.unwrap();
+                if line == "" {
+                    return;
+                }
                 // yes, this is an OpenOptions API!
-            io::copy(&mut file, pipe);
-            // In a real program, you can do any RPC you want
-            // over this pipe. Just don't .wait() early.
-        }).expect("Could not start the sandboxed process")
-        .wait().expect("Sandboxed process finished unsuccessfully")
-        .pipe;
-    let mut buf = Vec::new();
-    pipe.read_to_end(&mut buf).unwrap();
-    println!("From the sandboxed process: {}", String::from_utf8_lossy(&buf));
+                let file = ctx.directory("repo").unwrap()
+                    .open_options().open(line).unwrap();
+                socket.write_all(
+                    BufReader::new(file).lines().next().unwrap().unwrap().as_bytes()
+                ).unwrap();
+                socket.write_all(b"\n").unwrap();
+            }
+        }).expect("Could not start the sandboxed process");
+    process.socket.write_all(b"README.md\n").unwrap();
+    let reader = BufReader::new(process.socket.try_clone().unwrap());
+    println!("Line from the sandboxed process: {}", reader.lines().next().unwrap().unwrap());
+    process.socket.write_all(b"\n").unwrap(); // The "stop" message
+    process.wait().expect("Sandboxed process finished unsuccessfully");
 }
 ```
+
+(For a real service, use something like [urpc](https://github.com/kmcallister/urpc)!)
 
 Of course, you can use the directories feature when sandboxing the current process too:
 

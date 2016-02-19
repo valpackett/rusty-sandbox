@@ -1,17 +1,17 @@
 extern crate libc;
+extern crate unix_socket;
 
 mod platform;
 pub mod fs;
 
-use std::{io, process};
+use std::{io, process, mem};
 use std::collections::BTreeMap;
 use std::path::Path;
-use std::fs::File;
-use std::os::unix::io::FromRawFd;
+use unix_socket::UnixStream;
 
 pub struct RunningSandbox {
     pid: libc::c_int,
-    pub pipe: File,
+    pub socket: UnixStream,
 }
 
 impl RunningSandbox {
@@ -60,27 +60,23 @@ impl Sandbox {
     }
 
     pub fn sandboxed_fork<F>(&self, fun: F) -> io::Result<RunningSandbox>
-    where F: Fn(&mut SandboxContext, &mut File) -> () {
-        let mut fds: [libc::c_int; 2] = [0, 0];
-        if unsafe { libc::pipe(&mut fds[0]) } != 0 {
-            return Err(io::Error::new(io::ErrorKind::Other, "pipe() failed"))
-        }
+    where F: Fn(&mut SandboxContext, &mut UnixStream) -> () {
+        let (parent_socket, child_socket) = try!(UnixStream::pair());
 
         let pid = unsafe { libc::fork() };
         if pid < 0 {
             Err(io::Error::new(io::ErrorKind::Other, "fork() failed"))
         } else if pid > 0 { // parent
-            unsafe { libc::close(fds[1]) };
+            // child_socket is dropped by going out of scope
             Ok(RunningSandbox {
                 pid: pid,
-                pipe: unsafe { File::from_raw_fd(fds[0]) },
+                socket: parent_socket,
             })
         } else { // child
+            mem::drop(parent_socket);
             platform::enter_sandbox(Box::new(self.dirs.values()));
-            unsafe { libc::close(fds[0]) };
-            let mut pipe = unsafe { File::from_raw_fd(fds[1]) };
-            let mut ctx = self.context();
-            fun(&mut ctx, &mut pipe);
+            let mut socket = child_socket;
+            fun(&mut self.context(), &mut socket);
             process::exit(0);
         }
     }
@@ -96,16 +92,22 @@ impl Sandbox {
 mod tests {
     use super::*;
     use std::fs::File;
-    use std::io::{Read, Write};
+    use std::io::{Read, Write, BufRead, BufReader};
 
     #[test]
-    fn test_output() {
-        let mut buf = Vec::new();
-        let mut f = Sandbox::new()
-            .sandboxed_fork(|_, pipe| { pipe.write_all(b"Hello World").unwrap() })
-            .unwrap().wait().unwrap().pipe;
-        f.read_to_end(&mut buf).unwrap();
-        assert_eq!(&buf[..], b"Hello World");
+    fn test_socket() {
+        let mut process = Sandbox::new()
+            .sandboxed_fork(|_, socket| {
+                let msg = BufReader::new(socket.try_clone().unwrap()).lines().next().unwrap().unwrap() + " > from sandbox\n";
+                socket.write_all(msg.as_bytes()).unwrap();
+                socket.flush().unwrap();
+            })
+            .unwrap();
+        process.socket.write_all(b"from parent\n").unwrap();
+        process.socket.flush().unwrap();
+        let msg = BufReader::new(process.socket.try_clone().unwrap()).lines().next().unwrap().unwrap();
+        assert_eq!(msg, "from parent > from sandbox");
+        process.wait().unwrap();
     }
 
     #[test]

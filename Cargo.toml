@@ -11,3 +11,4 @@ repository = "https://github.com/myfreeweb/rusty-sandbox"
 
 [dependencies]
 libc = "0.2"
+unix_socket = "0.5"
