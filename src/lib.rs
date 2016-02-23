@@ -91,6 +91,7 @@ impl Sandbox {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::net;
     use std::fs::File;
     use std::io::{Read, Write, BufRead, BufReader};
 
@@ -124,6 +125,38 @@ mod tests {
         let mut f = File::open("/tmp/hello_rusty_sandbox").unwrap();
         f.read_to_end(&mut buf).unwrap();
         assert_eq!(&buf[..], b"Hello World");
+    }
+
+    #[test]
+    fn test_forbidden_file() {
+        let process = Sandbox::new()
+            .sandboxed_fork(|_, socket| {
+                socket.write_all(match File::open("README.md") {
+                    Ok(_) => b"ok",
+                    Err(_) => b"err",
+                }).unwrap();
+                socket.flush().unwrap();
+            })
+            .unwrap();
+        let msg = BufReader::new(process.socket.try_clone().unwrap()).lines().next().unwrap().unwrap();
+        assert_eq!(msg, "err");
+        process.wait().unwrap();
+    }
+
+    #[test]
+    fn test_forbidden_socket() {
+        let process = Sandbox::new()
+            .sandboxed_fork(|_, socket| {
+                socket.write_all(match net::TcpStream::connect("8.8.8.8:53") { // yes it's available on tcp too
+                    Ok(_) => b"ok",
+                    Err(_) => b"err",
+                }).unwrap();
+                socket.flush().unwrap();
+            })
+            .unwrap();
+        let msg = BufReader::new(process.socket.try_clone().unwrap()).lines().next().unwrap().unwrap();
+        assert_eq!(msg, "err");
+        process.wait().unwrap();
     }
 
 }
