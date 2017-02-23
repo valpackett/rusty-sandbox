@@ -112,6 +112,24 @@ mod tests {
     }
 
     #[test]
+    fn test_preopened_file() {
+        let mut f = File::open("UNLICENSE").unwrap();
+        let mut process = Sandbox::new()
+            .sandboxed_fork(|_, socket| {
+                let mut buf = String::new();
+                BufReader::new(&f).read_line(&mut buf).unwrap();
+                let msg = buf.replace("\n", "") + " from sandbox\n";
+                socket.write_all(msg.as_bytes()).unwrap();
+                socket.flush().unwrap();
+            })
+            .unwrap();
+        let msg = BufReader::new(process.socket.try_clone().unwrap()).lines().next().unwrap().unwrap();
+        assert_eq!(msg, "This is free and unencumbered software released into the public domain. from sandbox");
+        process.wait().unwrap();
+    }
+
+    #[cfg(not(target_os = "openbsd"))]
+    #[test]
     fn test_directory() {
         Sandbox::new()
             .add_directory("temp", "/tmp")
@@ -127,6 +145,7 @@ mod tests {
         assert_eq!(&buf[..], b"Hello World");
     }
 
+    #[cfg(not(target_os = "openbsd"))]
     #[test]
     fn test_forbidden_file() {
         let process = Sandbox::new()
@@ -143,6 +162,7 @@ mod tests {
         process.wait().unwrap();
     }
 
+    #[cfg(not(target_os = "openbsd"))]
     #[test]
     fn test_forbidden_socket() {
         let process = Sandbox::new()

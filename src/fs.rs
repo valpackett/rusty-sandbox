@@ -1,10 +1,9 @@
 use libc;
+use libc::{c_char, c_int, mode_t};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::ffi::CString;
-use std::os::raw::{c_char, c_int};
-use std::os::unix::raw;
 use std::os::unix::io::{RawFd, FromRawFd};
 
 fn path_to_c<P: AsRef<Path>>(path: P) -> CString {
@@ -16,7 +15,7 @@ pub struct OpenOptions {
     flags: c_int,
     read: bool,
     write: bool,
-    mode: raw::mode_t,
+    mode: mode_t,
 }
 
 impl OpenOptions {
@@ -54,7 +53,7 @@ impl OpenOptions {
         self.flag(libc::O_CREAT, create); self
     }
 
-    pub fn mode(&mut self, mode: raw::mode_t) -> &mut OpenOptions {
+    pub fn mode(&mut self, mode: mode_t) -> &mut OpenOptions {
         self.mode = mode; self
     }
 
