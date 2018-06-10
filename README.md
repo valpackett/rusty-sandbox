@@ -17,7 +17,7 @@ As well as other potentially dangerous interactions with the outside world such 
 rusty-sandbox strongly prefers simple sandboxing facilities that don't require any persistent and/or user-visible records (such as [chroot directories and bind mounts like gaol does on Linux](https://github.com/servo/gaol/blob/9d3753d6f6fb4b4d0f3cb5a29287db44659984fd/platform/linux/namespace.rs)).
 
 - FreeBSD: [Capsicum], the best-supported sandbox that really inspired the design of this library.
-- OpenBSD: [pledge], still without the path whitelist thing unfortunately (opening files under select directories DOES NOT WORK), also it kills the process instead of denying the offending operation.
+- OpenBSD: [pledge], still without the path whitelist thing unfortunately (opening files under select directories DOES NOT WORK), [waiting for 6.4](https://www.openbsd.org/papers/BeckPledgeUnveilBSDCan2018.pdf) for that
 - Apple OS X: [Seatbelt]/sandboxd, which Apple kinda wants to deprecate, in favor of App Store-only stuff I think?
 - Linux: **TODO** oh fuck. This is going to involve seccomp-bpf. Unfortunately, the openat O_BENEATH behavior proposed on [capsicum-linux](http://capsicum-linux.org) hasn't been accepted into the Linux kernel!
 
