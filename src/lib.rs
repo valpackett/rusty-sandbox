@@ -54,9 +54,12 @@ impl Sandbox {
         self
     }
 
-    pub fn sandbox_this_process(&self) -> SandboxContext {
-        platform::enter_sandbox(Box::new(self.dirs.values()));
-        self.context()
+    pub fn sandbox_this_process(&self) -> Result<SandboxContext, ()> {
+        if platform::enter_sandbox(Box::new(self.dirs.values())) {
+            Ok(self.context())
+        } else {
+            Err(())
+        }
     }
 
     pub fn sandboxed_fork<F>(&self, fun: F) -> io::Result<RunningSandbox>
