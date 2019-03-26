@@ -33,7 +33,7 @@ use rusty_sandbox::Sandbox;
 
 fn main() {
     let mut file = fs::File::open("README.md").unwrap();
-    Sandbox::new().sandbox_this_process();
+    Sandbox::new().sandbox_this_process().expect("Couldn't enter sandbox");
     let mut buf = Vec::new();
     file.read_to_end(&mut buf).unwrap();
     println!("Read file: {}", String::from_utf8_lossy(&buf));
@@ -91,7 +91,8 @@ use rusty_sandbox::Sandbox;
 fn main() {
     let ctx = Sandbox::new()
         .add_directory("repo", ".")
-        .sandbox_this_process();
+        .sandbox_this_process()
+        .unwrap();
     let mut file = ctx.directory("repo").unwrap()
         .open_options().open("README.md").unwrap();
     let mut buf = Vec::new();
